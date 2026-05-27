@@ -989,7 +989,7 @@ def render_header(selected_vessel: str, selected_report_time: pd.Timestamp) -> N
             <div class="eyebrow">Fleet reefer monitoring</div>
             <h1 class="dashboard-title">Reefer Dashboard</h1>
             <div class="dashboard-subtitle">
-                {escape(selected_vessel)} | selected report {selected_report_time.strftime('%Y-%m-%d %H:%M')} GMT | API snapshot
+                {escape(selected_vessel)} | selected report {selected_report_time.strftime('%Y-%m-%d %H:%M')} GMT
             </div>
         </div>
         """,
@@ -1020,7 +1020,6 @@ def render_api_load_caption(load_meta: dict[str, Any]) -> None:
         f"""
         <div class="api-load-caption">
             Last API load: <span>{escape(str(last_load))}</span>
-            · API rows: <span>{int(api_rows):,}</span>
         </div>
         """,
         unsafe_allow_html=True,
