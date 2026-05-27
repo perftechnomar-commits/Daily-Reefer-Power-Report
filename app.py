@@ -1051,7 +1051,7 @@ def run_warmup_if_requested() -> None:
         load_dashboard_data.clear()
 
     try:
-        with st.spinner("Warming up Marorka API data..."):
+        with st.spinner("Warming up API..."):
             raw_df, df, load_meta = load_dashboard_data(
                 username=username,
                 password=password,
