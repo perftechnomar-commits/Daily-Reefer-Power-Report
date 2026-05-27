@@ -989,7 +989,7 @@ def render_header(selected_vessel: str, selected_report_time: pd.Timestamp) -> N
             <div class="eyebrow">Fleet reefer monitoring</div>
             <h1 class="dashboard-title">Reefer Dashboard</h1>
             <div class="dashboard-subtitle">
-                {escape(selected_vessel)} | selected report {selected_report_time.strftime('%Y-%m-%d %H:%M')} GMT | live API snapshot
+                {escape(selected_vessel)} | selected report {selected_report_time.strftime('%Y-%m-%d %H:%M')} GMT | API snapshot
             </div>
         </div>
         """,
