@@ -1016,7 +1016,7 @@ def render_api_load_caption(load_meta: dict[str, Any]) -> None:
     last_load_raw = str(last_load).replace(" EEST", "").replace(" EET", "")
 
     try:
-        last_load_display = pd.to_datetime(last_load).strftime("%d-%m-%Y %H:%M:%S")
+        last_load_display = pd.to_datetime(last_load_raw).strftime("%d-%m-%Y %H:%M:%S")
     except Exception:
         last_load_display = str(last_load)
 
