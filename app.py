@@ -1013,8 +1013,7 @@ def render_remark_card(text: Any) -> None:
 def render_api_load_caption(load_meta: dict[str, Any]) -> None:
     """Render one small, discrete last-load indicator below the dashboard hero."""
     last_load = load_meta.get("last_api_load_local", "-")
-    api_rows = load_meta.get("api_rows", 0)
-    dashboard_rows = load_meta.get("dashboard_rows", 0)
+    last_load_raw = str(last_load).replace(" EEST", "").replace(" EET", "")
 
     try:
         last_load_display = pd.to_datetime(last_load).strftime("%d-%m-%Y %H:%M:%S")
@@ -1024,7 +1023,7 @@ def render_api_load_caption(load_meta: dict[str, Any]) -> None:
     st.markdown(
         f"""
         <div class="api-load-caption">
-            Last API load: <span>{escape(str(last_load))}</span>
+            Last API load: <span>{escape(last_load_display))}</span>
         </div>
         """,
         unsafe_allow_html=True,
