@@ -415,7 +415,7 @@ def require_dashboard_password() -> None:
 
 
 def build_odata_url(start_date: date) -> str:
-    start_text = start_date.strftime("%Y-%m-%d")
+    start_text = start_date.strftime("%d-%m-%Y")
     params = {
         "$filter": f"StartDateTimeGMT gt DateTime'{start_text}'",
         "$select": ",".join(SOURCE_COLUMNS),
@@ -933,7 +933,7 @@ def available_report_times_for_vessel(df: pd.DataFrame, vessel: str) -> list[pd.
 
 
 def format_report_time_option(vessel_df: pd.DataFrame, report_time: pd.Timestamp) -> str:
-    return report_time.strftime("%Y-%m-%d %H:%M")
+    return report_time.strftime("%d-%m-%Y %H:%M")
 
 
 def display_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -941,7 +941,7 @@ def display_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     display_df = df[columns].copy()
     for column in DATETIME_COLUMNS:
         if column in display_df.columns:
-            display_df[column] = display_df[column].dt.strftime("%Y-%m-%d %H:%M")
+            display_df[column] = display_df[column].dt.strftime("%d-%m-%Y %H:%M")
     return display_df
 
 
@@ -989,7 +989,7 @@ def render_header(selected_vessel: str, selected_report_time: pd.Timestamp) -> N
             <div class="eyebrow">Fleet reefer monitoring</div>
             <h1 class="dashboard-title">Reefer Dashboard</h1>
             <div class="dashboard-subtitle">
-                {escape(selected_vessel)} | selected report {selected_report_time.strftime('%Y-%m-%d %H:%M')} GMT
+                {escape(selected_vessel)} | selected report {selected_report_time.strftime('%d-%m-%Y %H:%M')} GMT
             </div>
         </div>
         """,
