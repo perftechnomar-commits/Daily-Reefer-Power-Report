@@ -1016,6 +1016,11 @@ def render_api_load_caption(load_meta: dict[str, Any]) -> None:
     api_rows = load_meta.get("api_rows", 0)
     dashboard_rows = load_meta.get("dashboard_rows", 0)
 
+    try:
+        last_load_display = pd.to_datetime(last_load).strftime("%d-%m-%Y %H:%M:%S")
+    except Exception:
+        last_load_display = str(last_load)
+
     st.markdown(
         f"""
         <div class="api-load-caption">
