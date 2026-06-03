@@ -1023,7 +1023,7 @@ def render_api_load_caption(load_meta: dict[str, Any]) -> None:
     st.markdown(
         f"""
         <div class="api-load-caption">
-            Last API load: <span>{escape(last_load_display))}</span>
+            Last API load: <span>{escape(last_load_display)}</span>
         </div>
         """,
         unsafe_allow_html=True,
