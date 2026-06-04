@@ -351,7 +351,7 @@ def app_timezone() -> ZoneInfo:
 
 def current_local_api_load_time() -> str:
     """Timestamp shown in the UI for the latest API/cache load."""
-    return datetime.now(app_timezone()).strftime("%d-%m-%Y %H:%M:%S %Z")
+    return datetime.now(app_timezone()).strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def get_query_param(name: str, default: str = "") -> str:
