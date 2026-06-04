@@ -933,7 +933,7 @@ def available_report_times_for_vessel(df: pd.DataFrame, vessel: str) -> list[pd.
 
 
 def format_report_time_option(vessel_df: pd.DataFrame, report_time: pd.Timestamp) -> str:
-    return report_time.strftime("%Y-%m-%d %H:%M")
+    return report_time.strftime("%d-%m-%Y %H:%M")
 
 
 def display_dataframe(df: pd.DataFrame) -> pd.DataFrame:
