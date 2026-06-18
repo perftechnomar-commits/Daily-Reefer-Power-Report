@@ -1098,11 +1098,38 @@ def main() -> None:
         st.info("Add MARORKA_USERNAME and MARORKA_PASSWORD to .streamlit/secrets.toml.")
         st.stop()
 
-    if st.sidebar.button("Refresh API data"):
-        fetch_report_data.clear()
-        transform_report_data.clear()
-        load_dashboard_data.clear()
-        st.rerun()
+    refresh_requested = st.sidebar.button("Refresh API data")
+    if refresh_requested:
+        st.session_state["confirm_api_refresh"] = True
+
+    if st.session_state.get("confirm_api_refresh"):
+        load_meta = st.session_state.get("reefer_load_meta") or {}
+        last_load = load_meta.get("last_api_load_local", "-")
+        last_load_raw = str(last_load).replace(" EEST", "").replace(" EET", "")
+
+        try:
+            last_load_display = pd.to_datetime(last_load_raw).strftime("%d-%m-%Y %H:%M:%S")
+        except Exception:
+            last_load_display = str(last_load)
+
+        st.sidebar.warning(
+            f"Refresh will call the API and may take a while.\n\n"
+            f"Last updated data was on: {last_load_display} LT"
+        )
+
+        col1, col2 = st.sidebar.columns(2)
+
+        if col1.button("Confirm"):
+            fetch_report_data.clear()
+            transform_report_data.clear()
+            load_dashboard_data.clear()
+            st.session_state["confirm_api_refresh"] = False
+            st.session_state.pop("reefer_load_meta", None)
+            st.rerun()
+
+        if col2.button("Cancel"):
+            st.session_state["confirm_api_refresh"] = False
+            st.rerun()
 
     try:
         with st.spinner("Loading Marorka report data..."):
@@ -1113,6 +1140,7 @@ def main() -> None:
                 auth_method=auth_method,
                 days_back=days_back,
             )
+            st.session_state["reefer_load_meta"] = load_meta
     except requests.HTTPError as exc:
         status = exc.response.status_code if exc.response is not None else "unknown"
         st.error(f"Marorka API request failed with status {status}.")
