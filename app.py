@@ -171,6 +171,21 @@ def apply_custom_css() -> None:
                 var(--bg);
         }
 
+        /* Match Streamlit's top header band with the dashboard background. */
+        header[data-testid="stHeader"],
+        header[data-testid="stHeader"] > div,
+        div[data-testid="stToolbar"],
+        div[data-testid="stDecoration"] {
+            background: var(--bg) !important;
+            background-color: var(--bg) !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        div[data-testid="stDecoration"] {
+            height: 0 !important;
+        }
+
         .block-container {
             padding-top: 3.5rem;
             padding-bottom: 3rem;
