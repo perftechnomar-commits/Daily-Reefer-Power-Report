@@ -164,26 +164,39 @@ def apply_custom_css() -> None:
             --green: #00FFA3;
         }
 
-        .stApp {
+        html, body,
+        .stApp,
+        div[data-testid="stAppViewContainer"],
+        div[data-testid="stAppViewContainer"] > section,
+        main,
+        div[data-testid="stMain"],
+        div[data-testid="stMain"] > div {
             background:
                 radial-gradient(circle at top left, rgba(0, 209, 255, 0.14), transparent 34rem),
                 radial-gradient(circle at top right, rgba(0, 255, 163, 0.09), transparent 30rem),
-                var(--bg);
+                var(--bg) !important;
+            background-color: var(--bg) !important;
         }
 
-        /* Match Streamlit's top header band with the dashboard background. */
         header[data-testid="stHeader"],
         header[data-testid="stHeader"] > div,
         div[data-testid="stToolbar"],
         div[data-testid="stDecoration"] {
-            background: var(--bg) !important;
-            background-color: var(--bg) !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            background-image: none !important;
             border: 0 !important;
             box-shadow: none !important;
         }
 
-        div[data-testid="stDecoration"] {
-            height: 0 !important;
+        /* Remove the separate dark top band above the dashboard body. */
+        div[data-testid="stAppViewContainer"] > .main,
+        div[data-testid="stAppViewContainer"] .main,
+        section.main,
+        .main .block-container {
+            background: transparent !important;
+            background-color: transparent !important;
+            background-image: none !important;
         }
 
         .block-container {
