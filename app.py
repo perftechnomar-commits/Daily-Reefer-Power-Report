@@ -680,6 +680,57 @@ def load_dashboard_data(
     return raw_df, df, load_meta
 
 
+def load_dashboard_data_fresh(
+    username: str,
+    password: str,
+    token: str,
+    auth_method: str,
+    days_back: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    """Load a fresh API snapshot without clearing the active cache first.
+
+    This is used by manual refresh and warmup force-refresh so the currently
+    displayed data remains available if the new API request fails.
+    """
+    raw_loader = getattr(fetch_report_data, "__wrapped__", fetch_report_data)
+    transform_loader = getattr(transform_report_data, "__wrapped__", transform_report_data)
+
+    raw_df = raw_loader(
+        username=username,
+        password=password,
+        token=token,
+        auth_method=auth_method,
+        days_back=days_back,
+    )
+    df = transform_loader(raw_df)
+    load_meta = {
+        "last_api_load_local": current_local_api_load_time(),
+        "api_rows": int(len(raw_df)),
+        "dashboard_rows": int(len(df)),
+        "fresh_load": True,
+    }
+    return raw_df, df, load_meta
+
+
+def set_active_dashboard_data(
+    raw_df: pd.DataFrame,
+    df: pd.DataFrame,
+    load_meta: dict[str, Any],
+) -> None:
+    """Store the active dataset for this browser session after a successful load."""
+    st.session_state["reefer_raw_df"] = raw_df
+    st.session_state["reefer_df"] = df
+    st.session_state["reefer_load_meta"] = load_meta
+
+
+def get_active_dashboard_data() -> tuple[pd.DataFrame | None, pd.DataFrame | None, dict[str, Any] | None]:
+    return (
+        st.session_state.get("reefer_raw_df"),
+        st.session_state.get("reefer_df"),
+        st.session_state.get("reefer_load_meta"),
+    )
+
+
 def build_report_rows(df: pd.DataFrame) -> pd.DataFrame:
     records = []
     grouped = df.sort_values("_source_order").groupby(
@@ -1077,20 +1128,42 @@ def run_warmup_if_requested() -> None:
         st.error("Warmup failed: MARORKA_USERNAME and MARORKA_PASSWORD are required.")
         st.stop()
 
-    if get_query_param("force", "0") == "1":
-        fetch_report_data.clear()
-        transform_report_data.clear()
-        load_dashboard_data.clear()
+    force_refresh = get_query_param("force", "0") == "1"
 
     try:
         with st.spinner("Warming up API..."):
-            raw_df, df, load_meta = load_dashboard_data(
-                username=username,
-                password=password,
-                token=token,
-                auth_method=auth_method,
-                days_back=days_back,
-            )
+            if force_refresh:
+                # Load fresh data first. Only after a successful API + transform cycle
+                # do we clear/reseed Streamlit cache, so a failed warmup does not
+                # remove the last good cached dataset.
+                raw_df, df, load_meta = load_dashboard_data_fresh(
+                    username=username,
+                    password=password,
+                    token=token,
+                    auth_method=auth_method,
+                    days_back=days_back,
+                )
+                fetch_report_data.clear()
+                transform_report_data.clear()
+                load_dashboard_data.clear()
+                # Reseed Streamlit's shared function cache only after the fresh
+                # request above has succeeded. This keeps the old cache intact
+                # during API outages and makes the next normal user load fast.
+                raw_df, df, load_meta = load_dashboard_data(
+                    username=username,
+                    password=password,
+                    token=token,
+                    auth_method=auth_method,
+                    days_back=days_back,
+                )
+            else:
+                raw_df, df, load_meta = load_dashboard_data(
+                    username=username,
+                    password=password,
+                    token=token,
+                    auth_method=auth_method,
+                    days_back=days_back,
+                )
     except requests.HTTPError as exc:
         status = exc.response.status_code if exc.response is not None else "unknown"
         st.error(f"Warmup failed: Marorka API request failed with status {status}.")
@@ -1105,7 +1178,7 @@ def run_warmup_if_requested() -> None:
             "last_api_load_local": load_meta.get("last_api_load_local"),
             "api_rows": int(len(raw_df)),
             "dashboard_rows": int(len(df)),
-            "force_refresh": get_query_param("force", "0") == "1",
+            "force_refresh": force_refresh,
         }
     )
     st.stop()
@@ -1148,27 +1221,41 @@ def main() -> None:
         col1, col2 = st.sidebar.columns(2)
 
         if col1.button("Confirm"):
-            fetch_report_data.clear()
-            transform_report_data.clear()
-            load_dashboard_data.clear()
-            st.session_state["confirm_api_refresh"] = False
-            st.session_state.pop("reefer_load_meta", None)
-            st.rerun()
+            try:
+                with st.spinner("Refreshing Marorka report data..."):
+                    raw_df, df, load_meta = load_dashboard_data_fresh(
+                        username=username,
+                        password=password,
+                        token=token,
+                        auth_method=auth_method,
+                        days_back=days_back,
+                    )
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else "unknown"
+                st.sidebar.error(f"Refresh failed with status {status}. Existing data was kept.")
+            except (MarorkaConfigError, ValueError, requests.RequestException) as exc:
+                st.sidebar.error(f"Refresh failed. Existing data was kept. {exc}")
+            else:
+                set_active_dashboard_data(raw_df, df, load_meta)
+                st.session_state["confirm_api_refresh"] = False
+                st.rerun()
 
         if col2.button("Cancel"):
             st.session_state["confirm_api_refresh"] = False
             st.rerun()
 
     try:
-        with st.spinner("Loading Marorka report data..."):
-            raw_df, df, load_meta = load_dashboard_data(
-                username=username,
-                password=password,
-                token=token,
-                auth_method=auth_method,
-                days_back=days_back,
-            )
-            st.session_state["reefer_load_meta"] = load_meta
+        raw_df, df, load_meta = get_active_dashboard_data()
+        if raw_df is None or df is None or load_meta is None:
+            with st.spinner("Loading Marorka report data..."):
+                raw_df, df, load_meta = load_dashboard_data(
+                    username=username,
+                    password=password,
+                    token=token,
+                    auth_method=auth_method,
+                    days_back=days_back,
+                )
+                set_active_dashboard_data(raw_df, df, load_meta)
     except requests.HTTPError as exc:
         status = exc.response.status_code if exc.response is not None else "unknown"
         st.error(f"Marorka API request failed with status {status}.")
